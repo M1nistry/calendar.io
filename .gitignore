@@ -243,3 +243,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/calendar.io/Modules/PathOfExile
+/calendar.io/client_secret.json
+/calendar.io/Key.txt
