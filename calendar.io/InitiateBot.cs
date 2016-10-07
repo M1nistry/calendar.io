@@ -41,7 +41,7 @@ namespace calendar.io
             Client.ExecuteAndWait(async () =>
             {
                 var keyString = File.ReadAllText(Environment.CurrentDirectory + @"\Key.txt");
-                await Client.Connect(keyString);
+                await Client.Connect(keyString, TokenType.Bot);
             });
         }
 
@@ -109,7 +109,7 @@ namespace calendar.io
 
                         if (ladder == null) await e.Channel.SendMessage($"There was an issue fetching the {(activeRace != null ? @"current" : @"most recent")} ladder");
 
-                        var message = BuildLadderMessage(ladder, selectedEvent, null);
+                        var message = Ladders.BuildLadderMessage(ladder, selectedEvent, null);
                         await e.Channel.SendMessage(message);
                     });
 
@@ -122,7 +122,7 @@ namespace calendar.io
                         //this isn't the best solution to finding the temp hc league, but it works... for now
                         var hcTempLeague= active.FirstOrDefault(x => x.ApiName.EndsWith("hc"));
                         var hcTempLadder = Ladders.GetLadder(hcTempLeague?.prettyName);
-                        var message = BuildLadderMessage(hcTempLadder, null, hcTempLeague);
+                        var message = Ladders.BuildLadderMessage(hcTempLadder, null, hcTempLeague);
                         await e.Channel.SendMessage(message);
                     });
 
@@ -134,7 +134,7 @@ namespace calendar.io
                         var active = Status.ActiveLeagues;
                         var scTempLeague = active.FirstOrDefault(x => x.ApiName != "hardcore" && x.ApiName != "standard" && !x.ApiName.EndsWith("hc"));
                         var scTempLadder = Ladders.GetLadder(scTempLeague?.prettyName);
-                        var message = BuildLadderMessage(scTempLadder, null, scTempLeague);
+                        var message = Ladders.BuildLadderMessage(scTempLadder, null, scTempLeague);
                         await e.Channel.SendMessage(message);
                     });
 
@@ -201,29 +201,6 @@ namespace calendar.io
                         Console.WriteLine(ex.Message);
                     }
                 });
-        }
-
-        public static string BuildLadderMessage(Ladders.Ladder ladder, Racing.RaceEvent raceEvent = null, Status.League league = null)
-        {
-            var message = "";
-            if (raceEvent != null)
-            {
-                var activeRace = raceEvent.StartDt <= DateTime.Now && raceEvent.EndDt >= DateTime.Now;
-                message = $"{raceEvent.ID} | <{raceEvent.URL}> | {(activeRace ? $"Ends in {(DateTime.Now - raceEvent.EndDt).ToString("hh\\:mm\\:ss")}" : "Finished")} {Environment.NewLine}```";
-            }
-            else if (league != null)
-            {
-                message = $"{league.prettyName} | <{league.URL}> {Environment.NewLine}```";
-            }
-            const int maxResults = 10;
-            var postedResults = 0;
-            foreach (var entry in ladder?.Participants.TakeWhile(entry => postedResults != maxResults))
-            {
-                message += $"{Environment.NewLine}{(entry.Online ? "+" : "-")} [{entry.Rank,-2}] {entry.Account.Name,-16} | {entry.Character.Name,-23} | {entry.Character.Class,-12} | {entry.Character.Experience.ToString("N0"),-10} xp";
-                postedResults++;
-            }
-
-            return message + "```";
         }
     }
 }

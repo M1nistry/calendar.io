@@ -11,14 +11,14 @@ namespace calendar.io.Modules.PathOfExile
         public static Ladder GetLadder(string league, string filterClass = "")
         {
             var json = "";
-            if (!string.IsNullOrEmpty(league))
+            if (!String.IsNullOrEmpty(league))
                 using (var client = new WebClient()) json = client.DownloadString($"http://api.pathofexile.com/ladders/{league}?limit=200");
             try
             {
                 var result = JsonConvert.DeserializeObject<Ladder>(json);
-                if (filterClass != string.Empty)
+                if (filterClass != String.Empty)
                 {
-                    var entries = result.Participants.Where(x => string.Equals(x.Character.Class, filterClass, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                    var entries = result.Participants.Where(x => String.Equals(x.Character.Class, filterClass, StringComparison.CurrentCultureIgnoreCase)).ToList();
                     var filterResult = new Ladder
                     {
                         Participants = entries,
@@ -33,6 +33,29 @@ namespace calendar.io.Modules.PathOfExile
                 Console.WriteLine(e.Message);
                 return null;
             }
+        }
+
+        public static string BuildLadderMessage(Ladders.Ladder ladder, Racing.RaceEvent raceEvent = null, Status.League league = null)
+        {
+            var message = "";
+            if (raceEvent != null)
+            {
+                var activeRace = raceEvent.StartDt <= DateTime.Now && raceEvent.EndDt >= DateTime.Now;
+                message = $"{raceEvent.ID} | <{raceEvent.URL}> | {(activeRace ? $"Ends in {(DateTime.Now - raceEvent.EndDt).ToString("hh\\:mm\\:ss")}" : "Finished")} {Environment.NewLine}```";
+            }
+            else if (league != null)
+            {
+                message = $"{league.prettyName} | <{league.URL}> {Environment.NewLine}```";
+            }
+            const int maxResults = 10;
+            var postedResults = 0;
+            foreach (var entry in ladder?.Participants.TakeWhile(entry => postedResults != maxResults))
+            {
+                message += $"{Environment.NewLine}{(entry.Online ? "+" : "-")} [{entry.Rank,-2}] {entry.Account.Name,-16} | {entry.Character.Name,-23} | {entry.Character.Class,-12} | {entry.Character.Experience.ToString("N0"),-10} xp";
+                postedResults++;
+            }
+
+            return message + "```";
         }
 
         public class Ladder
